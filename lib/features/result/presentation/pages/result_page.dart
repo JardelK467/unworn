@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/consts.dart';
@@ -119,14 +122,7 @@ class _LoadingViewState extends State<_LoadingView>
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white24,
-                  ),
-                ),
+                const _GradientSpinner(size: 32, strokeWidth: 2),
                 const SizedBox(width: 16),
                 Text(
                   '$percent%',
@@ -157,15 +153,47 @@ class _LoadingViewState extends State<_LoadingView>
   }
 }
 
-class _ErrorView extends StatelessWidget {
+class _ErrorView extends StatefulWidget {
   const _ErrorView({required this.type, required this.onRetry});
 
   final ResultFailureType type;
   final VoidCallback onRetry;
+  @override
+  State<_ErrorView> createState() => _ErrorViewState();
+}
+
+class _ErrorViewState extends State<_ErrorView> {
+  bool _supportSheetShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _maybeShowQuotaSupportSheet();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ErrorView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.type != widget.type) {
+      _supportSheetShown = false;
+      _maybeShowQuotaSupportSheet();
+    }
+  }
+
+  void _maybeShowQuotaSupportSheet() {
+    if (widget.type != ResultFailureType.quotaExceeded || _supportSheetShown) {
+      return;
+    }
+    _supportSheetShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _showSupportSheet(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final (icon, title, subtitle) = switch (type) {
+    final (icon, title, subtitle) = switch (widget.type) {
       ResultFailureType.noInternet => (
         Icons.wifi_off_outlined,
         'No connection',
@@ -186,6 +214,43 @@ class _ErrorView extends StatelessWidget {
         'Something went wrong',
         'We couldn\'t reimagine your garment this time.',
       ),
+    };
+    final mainActionLabel = switch (widget.type) {
+      ResultFailureType.quotaExceeded => 'Contact Support',
+      ResultFailureType.invalidGarment => 'Retake Photo',
+      ResultFailureType.noInternet || ResultFailureType.unknown => 'Retry',
+    };
+    final VoidCallback mainActionOnPressed = switch (widget.type) {
+      ResultFailureType.quotaExceeded => () => _showSupportSheet(context),
+      ResultFailureType.invalidGarment => () => context.go('/camera'),
+      ResultFailureType.noInternet || ResultFailureType.unknown => widget.onRetry,
+    };
+    final Widget? secondaryAction = switch (widget.type) {
+      ResultFailureType.quotaExceeded => Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: TextButton(
+          onPressed: () => context.go('/'),
+          child: Text(
+            'Try Later',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.white54),
+          ),
+        ),
+      ),
+      ResultFailureType.noInternet => Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: TextButton(
+          onPressed: openAppSettings,
+          child: Text(
+            'Open Settings',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.white54),
+          ),
+        ),
+      ),
+      ResultFailureType.invalidGarment || ResultFailureType.unknown => null,
     };
 
     return Center(
@@ -226,32 +291,13 @@ class _ErrorView extends StatelessWidget {
               width: double.infinity,
               height: WelcomeSpacing.pillHeight,
               child: GradientBorderButton(
-                onPressed: type == ResultFailureType.quotaExceeded
-                    ? () => _showSupportSheet(context)
-                    : type == ResultFailureType.invalidGarment
-                    ? () => context.go('/camera')
-                    : onRetry,
-                label: type == ResultFailureType.quotaExceeded
-                    ? 'Contact Support'
-                    : type == ResultFailureType.invalidGarment
-                    ? 'Retake Photo'
-                    : 'Retry',
+                onPressed: mainActionOnPressed,
+                label: mainActionLabel,
                 borderRadius: AppSpacing.pillRadius,
               ),
             ).animate(delay: 500.ms).fadeIn(duration: 400.ms),
-            if (type == ResultFailureType.quotaExceeded)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: TextButton(
-                  onPressed: () => context.go('/'),
-                  child: Text(
-                    'Try Later',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.white54),
-                  ),
-                ),
-              ).animate(delay: 600.ms).fadeIn(duration: 400.ms),
+            if (secondaryAction != null)
+              secondaryAction.animate(delay: 600.ms).fadeIn(duration: 400.ms),
           ],
         ),
       ),
@@ -289,7 +335,7 @@ class _ErrorView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'support@unworn.app',
+              'jardelkerr@live.com',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.purple,
                 letterSpacing: 0.5,
@@ -309,4 +355,82 @@ class _ErrorView extends StatelessWidget {
       ),
     );
   }
+}
+
+class _GradientSpinner extends StatefulWidget {
+  const _GradientSpinner({this.size = 32, this.strokeWidth = 2});
+
+  final double size;
+  final double strokeWidth;
+
+  @override
+  State<_GradientSpinner> createState() => _GradientSpinnerState();
+}
+
+class _GradientSpinnerState extends State<_GradientSpinner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _controller,
+      child: CustomPaint(
+        size: Size(widget.size, widget.size),
+        painter: _GradientArcPainter(
+          colors: AppColors.gradientRing,
+          strokeWidth: widget.strokeWidth,
+        ),
+      ),
+    );
+  }
+}
+
+class _GradientArcPainter extends CustomPainter {
+  const _GradientArcPainter({
+    required this.colors,
+    required this.strokeWidth,
+  });
+
+  final List<Color> colors;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final paint = Paint()
+      ..shader = SweepGradient(
+        colors: [colors.first.withValues(alpha: 0), ...colors],
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      rect.deflate(strokeWidth / 2),
+      0,
+      math.pi * 1.75,
+      false,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GradientArcPainter oldDelegate) =>
+      oldDelegate.colors != colors || oldDelegate.strokeWidth != strokeWidth;
 }

@@ -62,14 +62,6 @@ class WelcomePage extends StatelessWidget {
                 ),
               ).animate(delay: 1000.ms).fadeIn(duration: 500.ms),
               const Spacer(),
-              Container(
-                width: double.infinity,
-                height: AppSpacing.accentBarHeight,
-                decoration: BoxDecoration(
-                  color: AppColors.purple,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
               const SizedBox(height: 16),
             ],
           ),
