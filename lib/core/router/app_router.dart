@@ -12,16 +12,31 @@ class AppRouter {
   static final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const WelcomePage()),
-      GoRoute(path: '/info', builder: (context, state) => const InfoPage()),
-      GoRoute(path: '/camera', builder: (context, state) => const CameraPage()),
+      GoRoute(
+        path: '/',
+        pageBuilder: (context, state) =>
+            _noTransitionPage(state, const WelcomePage()),
+      ),
+      GoRoute(
+        path: '/info',
+        pageBuilder: (context, state) =>
+            _noTransitionPage(state, const InfoPage()),
+      ),
+      GoRoute(
+        path: '/camera',
+        pageBuilder: (context, state) =>
+            _noTransitionPage(state, const CameraPage()),
+      ),
       GoRoute(
         path: '/result',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>;
-          return ResultPage(
-            imagePath: extra['imagePath'] as String,
-            userPrompt: extra['userPrompt'] as String?,
+          return _noTransitionPage(
+            state,
+            ResultPage(
+              imagePath: extra['imagePath'] as String,
+              userPrompt: extra['userPrompt'] as String?,
+            ),
           );
         },
       ),
@@ -35,4 +50,14 @@ class AppRouter {
       ),
     ),
   );
+
+  static NoTransitionPage<void> _noTransitionPage(
+    GoRouterState state,
+    Widget child,
+  ) {
+    return NoTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+    );
+  }
 }

@@ -119,20 +119,23 @@ class _LoadingViewState extends State<_LoadingView>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const _GradientSpinner(size: 32, strokeWidth: 2),
-                const SizedBox(width: 16),
-                Text(
-                  '$percent%',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w300,
-                    color: Colors.white,
-                    letterSpacing: 2,
+            SizedBox(
+              width: 96,
+              height: 96,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const _GradientSpinner(size: 96, strokeWidth: 2),
+                  Text(
+                    '$percent%',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w300,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 32),
             FadeTransition(

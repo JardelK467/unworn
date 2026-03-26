@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -42,14 +43,28 @@ class _CameraViewState extends State<_CameraView> {
   }
 
   Future<void> _capture() async {
-    final granted = await _requestPermission(
-      Permission.camera,
-      'Camera access is needed to capture your garment photo.',
-    );
+    final granted = await _requestPermission(Permission.camera);
     if (!granted || !mounted) return;
-    final picked = await _picker.pickImage(source: ImageSource.camera);
-    if (picked != null && mounted) {
-      context.read<CameraCubit>().onImageCaptured(picked.path);
+    try {
+      final picked = await _picker.pickImage(source: ImageSource.camera);
+      if (picked != null && mounted) {
+        context.read<CameraCubit>().onImageCaptured(picked.path);
+      }
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      final message = (e.code == 'camera_access_denied' ||
+              e.code == 'camera_unavailable' ||
+              e.message?.toLowerCase().contains('camera not available') == true)
+          ? 'Camera is not available on this device. Use Gallery instead.'
+          : 'Could not open camera. Please try again or use Gallery.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } on Exception {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open camera. Please try again or use Gallery.'),
+        ),
+      );
     }
   }
 
@@ -57,10 +72,7 @@ class _CameraViewState extends State<_CameraView> {
     final permission = Platform.isAndroid
         ? Permission.photos
         : Permission.photos;
-    final granted = await _requestPermission(
-      permission,
-      'Photo library access is needed to select your garment.',
-    );
+    final granted = await _requestPermission(permission);
     if (!granted || !mounted) return;
     final picked = await _picker.pickImage(source: ImageSource.gallery);
     if (picked != null && mounted) {
@@ -68,47 +80,13 @@ class _CameraViewState extends State<_CameraView> {
     }
   }
 
-  Future<bool> _requestPermission(
-    Permission permission,
-    String rationale,
-  ) async {
+  Future<bool> _requestPermission(Permission permission) async {
     var status = await permission.status;
     if (status.isGranted || status.isLimited) return true;
 
     status = await permission.request();
     if (status.isGranted || status.isLimited) return true;
-
-    if (status.isPermanentlyDenied && mounted) {
-      await _showPermissionDeniedDialog(rationale);
-    }
     return false;
-  }
-
-  Future<void> _showPermissionDeniedDialog(String message) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Permission Required'),
-        content: Text(message),
-        actions: [
-          OutlinedButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          GradientBorderButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              openAppSettings();
-            },
-            label: 'Open Settings',
-            borderRadius: AppSpacing.pillRadius,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

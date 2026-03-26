@@ -73,25 +73,46 @@ class _ResultsCarouselState extends State<ResultsCarousel> {
           left: AppSpacing.screenHorizontalPadding,
           right: AppSpacing.screenHorizontalPadding,
           bottom: MediaQuery.of(context).padding.bottom + 24,
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: widget.onTryAgain,
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Try Again'),
+          child: SizedBox(
+            height: WelcomeSpacing.pillHeight,
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: widget.onTryAgain,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.refresh, size: 18),
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Try Again',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: GradientBorderButton(
-                  onPressed: () =>
-                      _saveImage(context, widget.results[_currentPage]),
-                  icon: Icons.download,
-                  label: 'Download',
+                const SizedBox(width: 16),
+                Expanded(
+                  child: SizedBox(
+                    height: WelcomeSpacing.pillHeight,
+                    child: GradientBorderButton(
+                      onPressed: () =>
+                          _saveImage(context, widget.results[_currentPage]),
+                      icon: Icons.download,
+                      label: 'Download',
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
