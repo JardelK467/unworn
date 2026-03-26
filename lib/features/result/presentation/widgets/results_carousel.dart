@@ -164,7 +164,7 @@ class _ResultsCarouselState extends State<ResultsCarousel> {
   }
 }
 
-class _ResultCard extends StatelessWidget {
+class _ResultCard extends StatefulWidget {
   const _ResultCard({
     required this.result,
     required this.index,
@@ -176,101 +176,128 @@ class _ResultCard extends StatelessWidget {
   final int total;
 
   @override
+  State<_ResultCard> createState() => _ResultCardState();
+}
+
+class _ResultCardState extends State<_ResultCard> {
+  bool _showText = true;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.memory(
-          result.imageBytes,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => const Center(
-            child: Icon(Icons.broken_image, size: 64, color: Colors.white24),
-          ),
-        ),
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0.2, 0.6, 1.0],
-              colors: [
-                Colors.transparent,
-                Color(0x99000000),
-                Color(0xDD000000),
-              ],
+    return GestureDetector(
+      onTap: () => setState(() => _showText = !_showText),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.memory(
+            widget.result.imageBytes,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => const Center(
+              child: Icon(Icons.broken_image, size: 64, color: Colors.white24),
             ),
           ),
-        ),
-        Positioned(
-          left: AppSpacing.screenHorizontalPadding,
-          right: AppSpacing.screenHorizontalPadding,
-          top: 0,
-          bottom: 120,
-          child: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0.0, 0.12],
-              colors: [Colors.transparent, Colors.white],
-            ).createShader(bounds),
-            blendMode: BlendMode.dstIn,
-            child: SingleChildScrollView(
-              reverse: true,
-              padding: const EdgeInsets.only(top: 80),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      result.occasion,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ).animate().fadeIn(duration: 400.ms),
-                  const SizedBox(height: 10),
-                  Text(
-                        result.title,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 500.ms)
-                      .slideY(begin: 0.1, end: 0),
-                  const SizedBox(height: 8),
-                  Text(
-                    result.style,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.white,
-                      height: 1.5,
-                    ),
-                  ).animate(delay: 200.ms).fadeIn(duration: 500.ms),
-                  const SizedBox(height: 6),
-                  Text(
-                    result.transformation,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white54,
-                      height: 1.4,
-                    ),
-                  ).animate(delay: 350.ms).fadeIn(duration: 500.ms),
-                ],
+          AnimatedOpacity(
+            opacity: _showText ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 250),
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.45, 0.75, 1.0],
+                  colors: [
+                    Colors.transparent,
+                    Color(0x99000000),
+                    Color(0xDD000000),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ],
+          AnimatedOpacity(
+            opacity: _showText ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 250),
+            child: IgnorePointer(
+              ignoring: !_showText,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: AppSpacing.screenHorizontalPadding,
+                  right: AppSpacing.screenHorizontalPadding,
+                  bottom: 120,
+                ),
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        widget.result.occasion,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white70,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ).animate().fadeIn(duration: 400.ms),
+                    const SizedBox(height: 10),
+                    Text(
+                          widget.result.title,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: 0.1, end: 0),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.result.style,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white,
+                        height: 1.5,
+                      ),
+                    ).animate(delay: 200.ms).fadeIn(duration: 500.ms),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.result.transformation,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white54,
+                        height: 1.4,
+                      ),
+                    ).animate(delay: 350.ms).fadeIn(duration: 500.ms),
+                  ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Hint icon when text is hidden
+          if (!_showText)
+            Positioned(
+              bottom: 130,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Icon(
+                  Icons.touch_app_outlined,
+                  color: Colors.white.withValues(alpha: 0.4),
+                  size: 28,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -71,25 +71,29 @@ class ResultRepositoryImpl implements ResultRepository {
 
     final prompt = Content.multi([
       TextPart(
-        '''You are an expert fashion designer in 2026. Study the exact garment in this photo — its fabric, color, cut, silhouette, and construction details.
+        '''You are an expert fashion stylist in 2026. Study the exact garment in this photo — its fabric, color, cut, silhouette, fit, and every visible detail.
 
-Generate exactly 3 reimagined versions of THIS SPECIFIC garment. Each concept must:
-- Keep the original garment clearly recognizable (same base fabric/color family)
-- Apply a distinct modern 2026 fashion transformation
-- Be realistic and producible by a skilled tailor or fashion house
+Generate exactly 3 complete outfit styling concepts built around THIS EXACT garment, worn UNCHANGED. Each concept must:
+- Keep the garment 100% identical to the photo — same color, same fabric, same cut, same fit, NO added details, NO modifications, NO embellishments, NO design changes whatsoever
+- Style a complete outfit AROUND the garment using other clothing items, shoes, and accessories
+- Be realistic — something a person could actually put together and wear today
 
 Return only this JSON array, nothing else:
 [
   {
-    "title": "2-3 word collection-style name",
-    "style": "One sentence on the aesthetic direction",
-    "transformation": "One sentence describing the exact physical changes to the garment",
-    "occasion": "Short phrase e.g. Evening wear, Street style",
-    "imagePrompt": "Ultra-detailed fashion photography prompt: describe the reimagined garment precisely — reference the original garment's color, fabric, and shape, then describe specific modifications (cuts, additions, styling). Place on a model in a modern editorial setting with studio lighting, shot on 85mm lens, 2026 fashion campaign style, photorealistic, high fashion magazine quality"
+    "title": "2-3 word styling concept name",
+    "style": "One sentence on the overall aesthetic direction of the outfit",
+    "transformation": "One sentence listing the key pieces paired with the garment (e.g. bottoms, shoes, accessories)",
+    "occasion": "Short phrase e.g. Evening out, Casual weekend, Office smart-casual",
+    "imagePrompt": "Ultra-detailed fashion photography prompt: describe the EXACT original garment first — its precise color, fabric, texture, fit, neckline, sleeve length, and every visible detail from the photo. The garment must appear EXACTLY as it is in the original photo with ZERO modifications. Then describe the complete styled outfit around it — specific bottoms, footwear, accessories, and layering pieces. Place on a model in a modern editorial setting with studio lighting, full body shot on 85mm lens, 2026 fashion campaign style, photorealistic, high fashion magazine quality"
   }
 ]
 
-CRITICAL for imagePrompt: Be extremely specific about the garment. Mention its exact color, material, and original form first, then describe each modification. The generated image must look like a real transformed version of this exact garment, not a generic fashion concept.${userPrompt != null ? '\n\nADDITIONAL USER DIRECTION: The user wants: "$userPrompt". Incorporate this vision into all 3 concepts while still keeping the garment recognizable.' : ''}''',
+CRITICAL RULES for imagePrompt:
+1. The garment from the photo must appear EXACTLY as-is — same color, same fabric, same construction, same fit. Do NOT add patterns, graphics, textures, embellishments, distressing, cropping, or ANY detail not visible in the original photo.
+2. Describe the original garment with extreme precision so the generated image reproduces it faithfully.
+3. All creativity goes into the OTHER pieces in the outfit, NOT into changing the garment itself.
+4. Show a complete, wearable outfit that a real person could recreate.${userPrompt != null ? '\n\nADDITIONAL USER DIRECTION: The user wants: "$userPrompt". Incorporate this into the styling direction of all 3 outfits while keeping the original garment completely unchanged.' : ''}''',
       ),
       DataPart('image/jpeg', imageBytes),
     ]);
